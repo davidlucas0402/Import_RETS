@@ -46,6 +46,10 @@ if ($connect) {
             $remarks = "{$property->PublicRemarks}";
             $transactionType = "{$property->TransactionType}";
 
+            $address = $property->Address;
+            $streetAddress = "{$address->StreetAddress}";
+            
+
             $dir = 'photos/' . $propertyId;
             if (!file_exists($dir)) {
                 mkdir($dir);
@@ -67,7 +71,7 @@ if ($connect) {
                 file_put_contents($photoFile, $img);
             }
 
-            $properties[] = [
+            $properties = [
                 'listingId' => $listingId,
                 'board' => $board,
                 'features' => $features,
@@ -75,7 +79,8 @@ if ($connect) {
                 'propertyType' => $propertyType,
                 'remarks' => $remarks,
                 'transactionType' => $transactionType,
-                'photos' => $photos
+                'photos' => $photos,
+                'streetAddress' => $streetAddress
             ];
 
             break;
