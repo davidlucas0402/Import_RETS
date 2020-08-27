@@ -138,7 +138,7 @@ if ($connect) {
 
             $_remarks = explode("/" . $city . "/", $remarks);
             $_remarks = $_remarks[1];
-            $_remarks = explode("(id:", $remarks);
+            $_remarks = explode("(id:", $_remarks);
             $_remarks = $_remarks[0];
             $description = trim($_remarks);
 
