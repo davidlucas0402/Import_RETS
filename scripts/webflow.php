@@ -130,6 +130,10 @@ function get_items($collection, $table)
     delete_table($table);
 
     $data = webflow_get("https://api.webflow.com/collections/$collection/items");
+    if(!isset($data['items'])) {
+        return FALSE;
+    }
+    
     $items = $data['items'];
 
     foreach ($items as $item) {
@@ -142,6 +146,8 @@ function get_items($collection, $table)
     }
 
     error_log('Total ' . $table . ': ' . count($items));
+
+    return count($items);
 }
 
 
@@ -152,6 +158,10 @@ function get_properties($collection)
     delete_table('properties');
 
     $data = webflow_get("https://api.webflow.com/collections/$collection/items");
+    if(!isset($data['items'])) {
+        return FALSE;
+    }
+
     $items = $data['items'];
 
     foreach ($items as $item) {
@@ -198,6 +208,8 @@ function get_properties($collection)
     }
 
     error_log('Total properties: ' . count($items));
+
+    return count($items);
 }
 
 
@@ -256,7 +268,7 @@ function insert_property($collection, $property)
         foreach ($photos as $_photo) {
             $idx++;
 
-            if ($idx <= 25) {
+            if ($idx <= 24) {
                 $galleryImgs[] = $_photo;
             } else {
                 $galleryImgs2[] = $_photo;
@@ -307,14 +319,19 @@ function insert_property($collection, $property)
     curl_close($curl);
 
     $data = json_decode($response, TRUE);
+
+    error_log($response);
+
+
     if (!isset($data['_id'])) {
         return FALSE;
     }
 
     $id = $data['_id'];
     error_log('Property Id: ' . $id);
+    exit();
 
-    return $id;
+    return TRUE;
 }
 
 
@@ -335,7 +352,7 @@ function update_property($collection, $property, $dbProperty)
     foreach ($photos as $_photo) {
         $idx++;
 
-        if ($idx <= 25) {
+        if ($idx <= 24) {
             $galleryImgs[] = $_photo;
         } else {
             $galleryImgs2[] = $_photo;
@@ -370,12 +387,14 @@ function update_property($collection, $property, $dbProperty)
     }
 
     $galleryImages = json_decode($dbProperty['gallery-images'], TRUE);
-    if (empty($galleryImages)) {
+    if (empty($galleryImages)) 
+    {
         $fields['gallery-images'] = $galleryImgs;
     }
 
     $galleryImages2 = json_decode($dbProperty['gallery-images-2'], TRUE);
-    if (empty($galleryImages2)) {
+    if (empty($galleryImages2)) 
+    {
         $fields['gallery-images-2'] = $galleryImgs2;
     }
 
@@ -400,8 +419,6 @@ function update_property($collection, $property, $dbProperty)
     $response = curl_exec($curl);
     curl_close($curl);
 
-    error_log($response);
-
     $data = json_decode($response, TRUE);
     if (!isset($data['_id'])) {
         return FALSE;
@@ -410,7 +427,7 @@ function update_property($collection, $property, $dbProperty)
     $id = $data['_id'];
     error_log('Property Id: ' . $id);
 
-    return $id;
+    return TRUE;
 }
 
 function delete_property($collection, $id)

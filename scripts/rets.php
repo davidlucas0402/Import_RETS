@@ -5,20 +5,26 @@ require_once("webflow.php");
 
 error_reporting(E_ERROR);
 ini_set("error_log", "file.log");
-ini_set('max_execution_time', 60 * 60); 
+ini_set('max_execution_time', 60 * 60);
 
 
 $property_collection  = get_id('collections', 'Property Listings');
 if (!$property_collection) {
     return;
 }
-get_properties($property_collection);
+$properties_num = get_properties($property_collection);
+if ($properties_num < 1) {
+    die('Failed to get properties');
+}
 
 $city_collection  = get_id('collections', 'Cities');
 if (!$city_collection) {
     return;
 }
-get_items($city_collection, 'cities');
+$cities_num = get_items($city_collection, 'cities');
+if ($cities_num < 1) {
+    die('Failed to get cities');
+}
 
 $price_collection  = get_id('collections', 'Price Ranges');
 if (!$price_collection) {
@@ -100,13 +106,13 @@ if ($connect) {
                 $photoUrl = "{$photo->LargePhotoURL}";
                 $photos[] = $photoUrl;
 
-                $photoFile = $dir . '/' . $photo->SequenceId . '.jpg';
+                /*$photoFile = $dir . '/' . $photo->SequenceId . '.jpg';
                 if (file_exists($photoFile)) {
                     continue;
                 }
 
                 $img = file_get_contents($photoUrl);
-                file_put_contents($photoFile, $img);
+                file_put_contents($photoFile, $img);*/
             }
 
             $building = $property->Building;
@@ -130,6 +136,13 @@ if ($connect) {
                 if (empty($cityId)) {
                     continue;
                 }
+
+                insert_table('cities', [
+                    'id' => $cityId,
+                    'name' => $city,
+                    'slug' => slugify($city),
+                    'cid' => $city_collection
+                ]);
             }
 
             $transId = get_trans_type($transactionType);
@@ -180,10 +193,15 @@ if (count($properties) == 0) {
     die('No properties');
 }
 
-file_put_contents('properties.json', json_encode($_properties));
+// file_put_contents('properties.json', json_encode($_properties));
 error_log('Total RETS properties - ' . count($properties));
 
 $dbProperties = select_table('properties');
+
+$RETS_count = count($properties);
+$added = 0;
+$updated = 0;
+$deleted = 0;
 
 // Loop properties
 foreach ($dbProperties as $dbProperty) {
@@ -198,13 +216,18 @@ foreach ($dbProperties as $dbProperty) {
     }
 
     if ($bRemove) {
+        $deleted++;
         error_log('Delete property - ' . $dbProperty['id']);
         delete_property($property_collection, $dbProperty['id']);
+        $deleted++;
         sleep(1);
     } else {
         // Update property
         error_log('Update property - ' . $dbProperty['id']);
-        update_property($property_collection, $property, $dbProperty);
+        $resp = update_property($property_collection, $property, $dbProperty);
+        if ($resp) {
+            $updated++;
+        }
         sleep(1);
     }
 }
@@ -223,10 +246,25 @@ foreach ($properties as $property) {
     if ($bNew) {
         error_log('Insert property - ' . $property['listingId']);
 
-        insert_property($property_collection, $property);
+        $added++;
+        $resp = insert_property($property_collection, $property);
+        if ($resp) {
+            $updated++;
+        }
+        else {
+        }
+
         sleep(1);
-        continue;
     }
 }
 
 publish_site();
+
+insert_table('logs', [
+    'created_at' => date('Y-m-d H:i:s'),
+    'rets_count' => $RETS_count,
+    'added' => $added,
+    'updated' => $updated,
+    'deleted' => $deleted,
+    'errors' => $RETS_count - $added - $updated - $deleted,
+]);
