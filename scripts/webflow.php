@@ -109,6 +109,8 @@ function get_sites()
 
 function get_collections($site_id)
 {
+    delete_table('collections');
+
     $collections = webflow_get("https://api.webflow.com/sites/" . $site_id . "/collections");
 
     foreach ($collections as $collection) {
@@ -120,6 +122,9 @@ function get_collections($site_id)
         ]);
     }
 
+    print('Collections: ' . count($collections));
+    print("\n");
+
     return $collections;
 }
 
@@ -130,10 +135,10 @@ function get_items($collection, $table)
     delete_table($table);
 
     $data = webflow_get("https://api.webflow.com/collections/$collection/items");
-    if(!isset($data['items'])) {
+    if (!isset($data['items'])) {
         return FALSE;
     }
-    
+
     $items = $data['items'];
 
     foreach ($items as $item) {
@@ -158,7 +163,8 @@ function get_properties($collection)
     delete_table('properties');
 
     $data = webflow_get("https://api.webflow.com/collections/$collection/items");
-    if(!isset($data['items'])) {
+
+    if (!isset($data['items'])) {
         return FALSE;
     }
 
@@ -203,7 +209,9 @@ function get_properties($collection)
             'city' => $item['city-tag'],
             'property-type' => $item['type-of-property'],
             'price-range' => $item['price-range-category'],
-            'status' => $item['status']
+            'status' => $item['status'],
+
+            'neighbourhood' => $item['neighbourhood'],
         ]);
     }
 
@@ -297,7 +305,8 @@ function insert_property($collection, $property)
             "image-1" => $photo,
             "featured-image-for-seo-normal-sized-photo" => $photo,
             "gallery-images" => $galleryImgs,
-            "gallery-images-2" => $galleryImgs2
+            "gallery-images-2" => $galleryImgs2,
+            "neighbourhood" => $property['neighbourhood'],
         ]
     ];
 
@@ -319,17 +328,12 @@ function insert_property($collection, $property)
     curl_close($curl);
 
     $data = json_decode($response, TRUE);
-
-    error_log($response);
-
-
     if (!isset($data['_id'])) {
         return FALSE;
     }
 
     $id = $data['_id'];
     error_log('Property Id: ' . $id);
-    exit();
 
     return TRUE;
 }
@@ -376,6 +380,7 @@ function update_property($collection, $property, $dbProperty)
         "type-of-property" => $property['typeId'],
         "price-range-category" => $property['priceId'],
         "status" => $property['statusId'],
+        "neighbourhood" => $property['neighbourhood'],
     ];
 
     if (empty($dbProperty['image'])) {
@@ -387,14 +392,12 @@ function update_property($collection, $property, $dbProperty)
     }
 
     $galleryImages = json_decode($dbProperty['gallery-images'], TRUE);
-    if (empty($galleryImages)) 
-    {
+    if (empty($galleryImages)) {
         $fields['gallery-images'] = $galleryImgs;
     }
 
     $galleryImages2 = json_decode($dbProperty['gallery-images-2'], TRUE);
-    if (empty($galleryImages2)) 
-    {
+    if (empty($galleryImages2)) {
         $fields['gallery-images-2'] = $galleryImgs2;
     }
 
@@ -421,6 +424,7 @@ function update_property($collection, $property, $dbProperty)
 
     $data = json_decode($response, TRUE);
     if (!isset($data['_id'])) {
+        error_log($response);
         return FALSE;
     }
 
@@ -512,25 +516,25 @@ function get_prop_type($property)
 {
     $propertyType = "{$property->PropertyType}";
     if ($propertyType == "Retail") {
-        $typeId = "5f28c44bf4e9782db472febb";
+        $typeId = get_id('property_types', 'retail');
     } else if ($propertyType == "Vacant Land") {
-        $typeId = "5f28c3453278064238d9d767";
+        $typeId = get_id('property_types', 'vacant land');
     } else if ($propertyType == "Industrial") {
-        $typeId = "5f28cebea5b59b3763dbb180";
+        $typeId = get_id('property_types', 'industrial');
     } else if ($propertyType == "Multi-family") {
-        $typeId = "5f476ad468d4931c226cda30";
+        $typeId = get_id('property_types', 'multi-family');
     } else {
         $building = $property->Building;
         $buildingType = "{$building->Type}";
 
         if ($buildingType == "Duplex") {
-            $typeId = "5f28c3ff245a28f7a42fd965";
+            $typeId = get_id('property_types', 'duplex');
         } else if ($buildingType == "Tri-Plex") {
-            $typeId = "5f28c40421daad7d3a56a20d";
+            $typeId = get_id('property_types', 'tri-plex');
         } else if ($buildingType == "Apartment") {
-            $typeId = "5f28c3f203d9202264238038";
+            $typeId = get_id('property_types', 'apartment');
         } else if ($buildingType == "Commercial Mix") {
-            $typeId = "5f28c421fef94bf75c1a6b92";
+            $typeId = get_id('property_types', 'commercial');
         } else {
 
             $architecturalStyle = "{$building->ArchitecturalStyle}";
@@ -539,33 +543,33 @@ function get_prop_type($property)
                 $architecturalStyle == "Bungalow"
                 || $architecturalStyle == "Raised bungalow"
             ) {
-                $typeId = "5f28c3334e58bf6e4e9d43ba";
+                $typeId = get_id('property_types', 'bungalow');
             } else if ($architecturalStyle == "Condo") {
-                $typeId = "5f28c33a28f2fd17429e5f8d";
+                $typeId = get_id('property_types', 'condo');
             } else if ($architecturalStyle == "Bi-level") {
-                $typeId = "5f28c33f21daad0b4e56a200";
+                $typeId = get_id('property_types', 'bi-level');
             } else if ($architecturalStyle == "Tri-level") {
-                $typeId = "5f28c3b7ce2bd979cf3a6197";
+                $typeId = get_id('property_types', 'tri-level');
             } else if ($architecturalStyle == "Multi-level") {
-                $typeId = "5f28c3c6024da6d25f6ebcb7";
+                $typeId = get_id('property_types', 'multi-level');
             } else {
                 $stories = floatval("{$building->StoriesTotal}");
                 if ($stories == 1) {
-                    $typeId = "5f28c3c6024da6d25f6ebcb7";
+                    $typeId = get_id('property_types', '1-storey');
                 } else if ($stories == 1.25) {
-                    $typeId = "5f28c35790ccd298a0237b25";
+                    $typeId = get_id('property_types', '1¼-storey');
                 } else if ($stories == 1.5) {
-                    $typeId = "5f28c360a5b59b53e9dbb0dd";
+                    $typeId = get_id('property_types', '1½-storey');
                 } else if ($stories == 1.75) {
-                    $typeId = "5f28c368fc8d4a11b39c677f";
+                    $typeId = get_id('property_types', '1¾-storey');
                 } else if ($stories == 2) {
-                    $typeId = "5f28c36de051c60c8c863e93";
+                    $typeId = get_id('property_types', '2-storey');
                 } else if ($stories == 2.25) {
-                    $typeId = "5f28c375552e684c25806704";
+                    $typeId = get_id('property_types', '2¼-storey');
                 } else if ($stories == 2.5) {
-                    $typeId = "5f28c38399f78159520e5fd5";
+                    $typeId = get_id('property_types', '2½-storey');
                 } else if ($stories == 2.75) {
-                    $typeId = "5f28c38c327806ecabd9db4e";
+                    $typeId = get_id('property_types', '2¾-storey');
                 }
             }
         }
@@ -581,17 +585,35 @@ function get_price_range($price)
 
     $price = intval($price);
     if ($price < 250000) {
-        $priceId = "5f28c2b6397ee38a604aa381";
+        $priceRow = run_query("SELECT * FROM price_ranges WHERE `name` LIKE '%249,999%'");
+        if ($priceRow) {
+            $priceId = $priceRow['id'];
+        }
     } else if ($price < 350000) {
-        $priceId = "5f28c2c0a98f21369d78de56";
+        $priceRow = run_query("SELECT * FROM price_ranges WHERE `name` LIKE '%349,999%'");
+        if ($priceRow) {
+            $priceId = $priceRow['id'];
+        }
     } else if ($price < 450000) {
-        $priceId = "5f28c2d520520b83b7b32f23";
+        $priceRow = run_query("SELECT * FROM price_ranges WHERE `name` LIKE '%449,999%'");
+        if ($priceRow) {
+            $priceId = $priceRow['id'];
+        }
     } else if ($price < 600000) {
-        $priceId = "5f28c2e0024da61ac66ebcb6";
+        $priceRow = run_query("SELECT * FROM price_ranges WHERE `name` LIKE '%599,999%'");
+        if ($priceRow) {
+            $priceId = $priceRow['id'];
+        }
     } else if ($price < 1000000) {
-        $priceId = "5f28c2f10943538634ee889e";
+        $priceRow = run_query("SELECT * FROM price_ranges WHERE `name` LIKE '%999,999%'");
+        if ($priceRow) {
+            $priceId = $priceRow['id'];
+        }
     } else {
-        $priceId = "5f28c306b7311748f18a763a";
+        $priceRow = run_query("SELECT * FROM price_ranges WHERE `name` LIKE '%1,000,000%'");
+        if ($priceRow) {
+            $priceId = $priceRow['id'];
+        }
     }
 
     return $priceId;

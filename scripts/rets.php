@@ -1,5 +1,7 @@
 <?php
 
+date_default_timezone_set('America/Chicago');
+
 require_once("phrets.php");
 require_once("webflow.php");
 
@@ -8,22 +10,16 @@ ini_set("error_log", "file.log");
 ini_set('max_execution_time', 60 * 60);
 
 
-$property_collection  = get_id('collections', 'Property Listings');
+get_collections(WEBFLOW_SITEID);
+
+$property_collection  = get_id('collections', 'Listings');
 if (!$property_collection) {
     return;
-}
-$properties_num = get_properties($property_collection);
-if ($properties_num < 1) {
-    die('Failed to get properties');
 }
 
 $city_collection  = get_id('collections', 'Cities');
 if (!$city_collection) {
     return;
-}
-$cities_num = get_items($city_collection, 'cities');
-if ($cities_num < 1) {
-    die('Failed to get cities');
 }
 
 $price_collection  = get_id('collections', 'Price Ranges');
@@ -41,8 +37,35 @@ if (!$status_collection) {
     return;
 }
 
+$properties_num = get_properties($property_collection);
+if ($properties_num < 1) {
+    die('Failed to get properties');
+}
+sleep(1);
 
-get_properties($property_collection);
+$city_count = 0;
+for ($i = 0; $i < 5; $i++) {
+    $city_count = get_items($city_collection, 'cities');
+    if ($city_count > 0) {
+        break;
+    }
+    sleep(5);
+}
+
+if($city_count < 1) {
+    die('City not working.');
+}
+
+sleep(1);
+
+get_items($price_collection, 'price_ranges');
+sleep(1);
+
+get_items($type_collection, 'property_types');
+sleep(1);
+
+get_items($status_collection, 'listing_status');
+sleep(1);
 
 $login = 'http://data.crea.ca/Login.svc/Login';
 $un = '4Upb5e1Gg7fL2TbFbG6ZTdae';
@@ -69,7 +92,6 @@ if ($connect) {
     );
 
     $properties = [];
-    $_properties = [];
 
     /* If search returned results */
     if ($rets->TotalRecordsFound() > 0) {
@@ -79,7 +101,8 @@ if ($connect) {
             print($propertyId . "\n");
 
             $property = $rets->SearchDetail($propertyId);
-            $_properties[] = $property;
+
+            $lastUpdated = $property->{'@attributes'}->LastUpdated;
 
             $listingId = "{$property->ListingID}";
             $board = "{$property->Board}";
@@ -93,6 +116,7 @@ if ($connect) {
             $city = "{$address->City}";
             $province = "{$address->Province}";
             $postalCode = "{$address->PostalCode}";
+            $neighbourhood = "{$address->Neighbourhood}";
 
             $dir = 'photos/' . $propertyId;
             if (!file_exists($dir)) {
@@ -155,7 +179,17 @@ if ($connect) {
             $_remarks = $_remarks[0];
             $description = trim($_remarks);
 
+            $alternateURL = $property->AlternateURL;
+
+            $videoLink = '';
+            if (isset($alternateURL->VideoLink)) {
+                $videoLink = $alternateURL->VideoLink;
+            }
+
             $_property = [
+
+                'lastUpdated' => $lastUpdated,
+
                 'cityId' => $cityId,
                 'statusId' => $transId,
                 'typeId' => $typeId,
@@ -176,6 +210,8 @@ if ($connect) {
                 'city' => $city,
                 'province' => $province,
                 'postalCode' => $postalCode,
+                'videoLink' => $videoLink,
+                'neighbourhood' => $neighbourhood,
             ];
 
             $properties[] = $_property;
@@ -188,12 +224,10 @@ if ($connect) {
     die($error);
 }
 
-
 if (count($properties) == 0) {
     die('No properties');
 }
 
-// file_put_contents('properties.json', json_encode($_properties));
 error_log('Total RETS properties - ' . count($properties));
 
 $dbProperties = select_table('properties');
@@ -228,7 +262,7 @@ foreach ($dbProperties as $dbProperty) {
         if ($resp) {
             $updated++;
         }
-        sleep(1);
+        sleep(2);
     }
 }
 
@@ -250,8 +284,7 @@ foreach ($properties as $property) {
         $resp = insert_property($property_collection, $property);
         if ($resp) {
             $updated++;
-        }
-        else {
+        } else {
         }
 
         sleep(1);

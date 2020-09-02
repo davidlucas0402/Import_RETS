@@ -54,6 +54,20 @@ function run_query($sql)
     return $rows;
 }
 
+function row_query($sql)
+{
+    global $conn;
+
+    if ($result = $conn->query($sql)) {
+        $row = $result->fetch_assoc();
+        $result->close();
+
+        return $row;
+    }
+
+    return FALSE;
+}
+
 function select_table($table, $wheres = [], $sort = '')
 {
     global $conn;

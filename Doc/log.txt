@@ -3,8 +3,21 @@ https://www.andrewsthilaire.com?edit=1&amp%3Bt=MzYxMGJlZjczZTA2MTAzZGYwZDQ5YWQzZ
 andrew@andrewsthilaire.com
 20704328799Andrew$$
 
+test123123
+
 https://makingthemusic.com:2083/
 makingt6
 test123123
 
 andrew@makingthemusic.com
+
+
+
+curl -s "http://makingthemusic.com/project/scripts/rets.php"	
+
+
+1) Some listings include a 'branded' and/or 'unbranded' video. I have a place for video URLs in each listing. I'd like the 'unbranded' video URL to be saved to CMS please. Maybe you already have done this and I haven't found a listing with a video yet, but if not, I'd like this included from RETS to CMS.
+2) Same thing for 'Floorplan' since I believe this is a separate data field from RETS. This would be more important for newly built homes I think. I'm not sure agents use this field on not, but if you don't see any such data in the RETS for any properties, I could maybe delete this field. I'd like to have it if the data is there though.
+3) I'd like to have the 'neighbourhood' saved to CMS. I don't know if this is fully spelled out or a neghourhood code like '2f', '1m', etc. but with the PHP I could provide you the list and maybe we could convert the code characters to the full name. Or maybe you code just add the function and I'll fill in all the codes and real names.
+4) What fields are overwritten every time it refreshes and what fields do not, if any?
+5) Is it possible to show my time zone for the Logs History page you provided so I can keep track more easily of the time? I'm in GMT-5 (Central Daylight Time).
