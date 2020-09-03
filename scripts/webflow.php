@@ -506,8 +506,16 @@ function get_city($city)
     return $cityId;
 }
 
-function get_trans_type($transactionType)
+function get_trans_type($ownershipType)
 {
+    $transactionType = '';
+    if($ownershipType == 'Leasehold') {
+        $transactionType = 'For lease';
+    }
+    else {
+        $transactionType = 'For sale';
+    }
+
     $transId = get_id('listing_status', $transactionType);
     return $transId;
 }

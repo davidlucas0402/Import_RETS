@@ -91,6 +91,7 @@ if ($connect) {
         )
     );
 
+    $_properties = [];
     $properties = [];
 
     /* If search returned results */
@@ -101,6 +102,7 @@ if ($connect) {
             print($propertyId . "\n");
 
             $property = $rets->SearchDetail($propertyId);
+            $_properties[] = $property;
 
             $lastUpdated = $property->{'@attributes'}->LastUpdated;
 
@@ -110,6 +112,7 @@ if ($connect) {
             $price = intval("{$property->Price}");
             $remarks = "{$property->PublicRemarks}";
             $transactionType = "{$property->TransactionType}";
+            $ownershipType = "{$property->OwnershipType}";
 
             $address = $property->Address;
             $streetAddress = "{$address->StreetAddress}";
@@ -169,7 +172,7 @@ if ($connect) {
                 ]);
             }
 
-            $transId = get_trans_type($transactionType);
+            $transId = get_trans_type($ownershipType);
             $typeId = get_prop_type($property);
             $priceId = get_price_range($price);
 
